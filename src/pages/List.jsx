@@ -4,46 +4,84 @@ import { fetchEmployees } from "../services/api";
 export default function List() {
 
   const [employees, setEmployees] = useState([]);
+  const [scrollTop, setScrollTop] = useState(0);
 
-  const [loading, setLoading] = useState(true);
+  const rowHeight = 50;
+  const containerHeight = 600;
+  const buffer = 5;
 
   useEffect(() => {
-
     async function loadData() {
-
       const data = await fetchEmployees();
-
-      console.log("API Data:", data);
-
       setEmployees(data);
-
-      setLoading(false);
     }
 
     loadData();
-
   }, []);
 
-  if (loading) {
-    return <h2>Loading employees...</h2>;
-  }
+  const totalRows = employees.length;
+
+  const visibleCount = Math.ceil(containerHeight / rowHeight);
+
+  const startIndex = Math.floor(scrollTop / rowHeight);
+
+  const endIndex = startIndex + visibleCount + buffer;
+
+  const visibleRows = employees.slice(startIndex, endIndex);
+
+  const offsetY = startIndex * rowHeight;
+
+  const handleScroll = (e) => {
+    setScrollTop(e.target.scrollTop);
+  };
 
   return (
     <div style={{ padding: 20 }}>
 
       <h2>Employee List</h2>
 
-      {employees.map((emp, index) => (
+      <div
+        style={{
+          height: containerHeight,
+          overflowY: "auto",
+          border: "1px solid #ccc"
+        }}
+        onScroll={handleScroll}
+      >
+
         <div
-          key={index}
           style={{
-            padding: 10,
-            borderBottom: "1px solid #ccc"
+            height: totalRows * rowHeight,
+            position: "relative"
           }}
         >
-          {JSON.stringify(emp)}
+
+          <div
+            style={{
+              transform: `translateY(${offsetY}px)`
+            }}
+          >
+
+            {visibleRows.map((emp, index) => (
+              <div
+                key={index}
+                style={{
+                  height: rowHeight,
+                  borderBottom: "1px solid #eee",
+                  display: "flex",
+                  alignItems: "center",
+                  paddingLeft: 10
+                }}
+              >
+                {JSON.stringify(emp)}
+              </div>
+            ))}
+
+          </div>
+
         </div>
-      ))}
+
+      </div>
 
     </div>
   );
