@@ -11,12 +11,35 @@ export default function List() {
   const buffer = 5;
 
   useEffect(() => {
+
     async function loadData() {
+
       const data = await fetchEmployees();
-      setEmployees(data);
+
+      console.log("API DATA:", data);
+
+      // extract employees safely
+      let employeeArray = [];
+
+      if (Array.isArray(data)) {
+        employeeArray = data;
+      }
+      else if (Array.isArray(data?.data)) {
+        employeeArray = data.data;
+      }
+      else if (Array.isArray(data?.TABLE_DATA)) {
+        employeeArray = data.TABLE_DATA;
+      }
+      else if (Array.isArray(data?.TABLE_DATA?.data)) {
+        employeeArray = data.TABLE_DATA.data;
+      }
+
+      setEmployees(employeeArray);
+
     }
 
     loadData();
+
   }, []);
 
   const totalRows = employees.length;
@@ -63,8 +86,9 @@ export default function List() {
           >
 
             {visibleRows.map((emp, index) => (
+
               <div
-                key={index}
+                key={startIndex + index}
                 style={{
                   height: rowHeight,
                   borderBottom: "1px solid #eee",
@@ -73,8 +97,9 @@ export default function List() {
                   paddingLeft: 10
                 }}
               >
-                {JSON.stringify(emp)}
+                {emp.EMPLOYEE_NAME || emp.name || JSON.stringify(emp)}
               </div>
+
             ))}
 
           </div>
