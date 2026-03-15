@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { fetchEmployees } from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 export default function List() {
 
   const [employees, setEmployees] = useState([]);
   const [scrollTop, setScrollTop] = useState(0);
+
+  const navigate = useNavigate();
 
   const rowHeight = 50;
   const containerHeight = 600;
@@ -18,7 +21,6 @@ export default function List() {
 
       console.log("API DATA:", data);
 
-      // extract employees safely
       let employeeArray = [];
 
       if (Array.isArray(data)) {
@@ -61,7 +63,25 @@ export default function List() {
   return (
     <div style={{ padding: 20 }}>
 
-      <h2>Employee List</h2>
+      {/* Header with analytics button */}
+
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}>
+        <h2>Employee List</h2>
+
+        <button
+          onClick={() => navigate("/analytics")}
+          style={{
+            padding: "8px 14px",
+            cursor: "pointer"
+          }}
+        >
+          View Analytics
+        </button>
+      </div>
 
       <div
         style={{
@@ -89,12 +109,14 @@ export default function List() {
 
               <div
                 key={startIndex + index}
+                onClick={() => navigate(`/details/${startIndex + index}`)}
                 style={{
                   height: rowHeight,
                   borderBottom: "1px solid #eee",
                   display: "flex",
                   alignItems: "center",
-                  paddingLeft: 10
+                  paddingLeft: 10,
+                  cursor: "pointer"
                 }}
               >
                 {emp.EMPLOYEE_NAME || emp.name || JSON.stringify(emp)}
