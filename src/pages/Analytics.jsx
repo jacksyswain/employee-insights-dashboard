@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { fetchEmployees } from "../services/api";
-
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 export default function Analytics() {
@@ -17,13 +16,14 @@ export default function Analytics() {
 
       data.forEach(emp => {
 
-        const city = emp.city;
+        const city = emp.city || emp.CITY;
+        const salary = emp.salary || emp.SALARY;
 
         if (!citySalary[city]) {
           citySalary[city] = 0;
         }
 
-        citySalary[city] += Number(emp.salary);
+        citySalary[city] += Number(salary);
 
       });
 
@@ -35,6 +35,7 @@ export default function Analytics() {
       );
 
       setChartData(formatted);
+
     }
 
     loadData();
@@ -49,81 +50,147 @@ export default function Analytics() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-
-      <h2>Employee Analytics Dashboard</h2>
-
-      {/* SVG Chart */}
-
-      <h3>Salary Distribution by City</h3>
-
-      <svg width="600" height="300" style={{ border: "1px solid #ccc" }}>
-
-        {chartData.map((item, index) => {
-
-          const barHeight = item.salary / 1000;
-
-          const x = index * 100 + 40;
-
-          const y = 250 - barHeight;
-
-          return (
-            <g key={index}>
-
-              <rect
-                x={x}
-                y={y}
-                width="50"
-                height={barHeight}
-                fill="steelblue"
-              />
-
-              <text
-                x={x}
-                y={270}
-                fontSize="12"
-              >
-                {item.city}
-              </text>
-
-            </g>
-          );
-        })}
-
-      </svg>
-
-      {/* Map */}
-
-      <h3 style={{ marginTop: 40 }}>Employee Cities Map</h3>
-
-      <MapContainer
-        center={[20.5937, 78.9629]}
-        zoom={5}
-        style={{ height: "400px", width: "600px" }}
+    <div
+      style={{
+        background: "#f4f6f9",
+        minHeight: "100vh",
+        padding: 40,
+        fontFamily: "Arial"
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1000,
+          margin: "auto"
+        }}
       >
 
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <h2 style={{ marginBottom: 30 }}>
+          Employee Analytics Dashboard
+        </h2>
 
-        {chartData.map((item, index) => {
+        {/* Chart Card */}
 
-          const coords = cityCoordinates[item.city];
+        <div
+          style={{
+            background: "white",
+            padding: 25,
+            borderRadius: 10,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+            marginBottom: 40
+          }}
+        >
 
-          if (!coords) return null;
+          <h3 style={{ marginBottom: 20 }}>
+            Salary Distribution by City
+          </h3>
 
-          return (
-            <Marker key={index} position={coords}>
-              <Popup>
-                {item.city} <br />
-                Total Salary: {item.salary}
-              </Popup>
-            </Marker>
-          );
-        })}
+          <svg
+            width="100%"
+            height="300"
+            viewBox="0 0 800 300"
+            style={{
+              border: "1px solid #eee",
+              background: "#fafafa",
+              borderRadius: 6
+            }}
+          >
 
-      </MapContainer>
+            {chartData.map((item, index) => {
 
+              const chartWidth = 800;
+              const barWidth = 60;
+
+              const gap = chartWidth / chartData.length;
+
+              const x = index * gap + gap / 2 - barWidth / 2;
+
+              const barHeight = item.salary / 1000;
+
+              const y = 250 - barHeight;
+
+              return (
+                <g key={index}>
+
+                  <rect
+                    x={x}
+                    y={y}
+                    width={barWidth}
+                    height={barHeight}
+                    fill="#4f46e5"
+                    rx="6"
+                  />
+
+                  <text
+                    x={x + barWidth / 2}
+                    y={270}
+                    textAnchor="middle"
+                    fontSize="13"
+                  >
+                    {item.city}
+                  </text>
+
+                </g>
+              );
+
+            })}
+
+          </svg>
+
+        </div>
+
+        {/* Map Card */}
+
+        <div
+          style={{
+            background: "white",
+            padding: 25,
+            borderRadius: 10,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.08)"
+          }}
+        >
+
+          <h3 style={{ marginBottom: 20 }}>
+            Employee Cities Map
+          </h3>
+
+          <MapContainer
+            center={[20.5937, 78.9629]}
+            zoom={5}
+            style={{
+              height: "450px",
+              width: "100%",
+              borderRadius: 8
+            }}
+          >
+
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            {chartData.map((item, index) => {
+
+              const coords = cityCoordinates[item.city];
+
+              if (!coords) return null;
+
+              return (
+                <Marker key={index} position={coords}>
+                  <Popup>
+                    <strong>{item.city}</strong>
+                    <br />
+                    Total Salary: {item.salary}
+                  </Popup>
+                </Marker>
+              );
+
+            })}
+
+          </MapContainer>
+
+        </div>
+
+      </div>
     </div>
   );
 }

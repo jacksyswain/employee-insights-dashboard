@@ -13,15 +13,10 @@ export default function Details() {
 
   const drawing = useRef(false);
 
-  // Start Camera
   useEffect(() => {
-
     async function startCamera() {
       try {
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -33,10 +28,8 @@ export default function Details() {
     }
 
     startCamera();
-
   }, []);
 
-  // Capture Photo
   const capturePhoto = () => {
 
     const video = videoRef.current;
@@ -55,7 +48,6 @@ export default function Details() {
     setPhoto(image);
   };
 
-  // Start drawing signature
   const startDraw = (e) => {
 
     drawing.current = true;
@@ -63,11 +55,9 @@ export default function Details() {
     const ctx = canvasRef.current.getContext("2d");
 
     ctx.beginPath();
-
     ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
   };
 
-  // Draw signature
   const draw = (e) => {
 
     if (!drawing.current) return;
@@ -75,7 +65,6 @@ export default function Details() {
     const ctx = canvasRef.current.getContext("2d");
 
     ctx.lineWidth = 2;
-
     ctx.lineCap = "round";
 
     ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
@@ -83,16 +72,13 @@ export default function Details() {
     ctx.stroke();
   };
 
-  // Stop drawing
   const stopDraw = () => {
     drawing.current = false;
   };
 
-  // Merge photo + signature
   const mergeImages = () => {
 
     const canvas = document.createElement("canvas");
-
     const ctx = canvas.getContext("2d");
 
     const img = new Image();
@@ -102,10 +88,7 @@ export default function Details() {
       canvas.width = img.width;
       canvas.height = img.height;
 
-      // Draw photo
       ctx.drawImage(img, 0, 0);
-
-      // Draw signature
       ctx.drawImage(canvasRef.current, 0, 0);
 
       const merged = canvas.toDataURL("image/png");
@@ -117,94 +100,160 @@ export default function Details() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{
+      background: "#f4f6f9",
+      minHeight: "100vh",
+      padding: 40,
+      fontFamily: "Arial"
+    }}>
 
-      <h2>Employee Identity Verification</h2>
+      <div style={{
+        maxWidth: 500,
+        margin: "auto",
+        background: "white",
+        padding: 30,
+        borderRadius: 10,
+        boxShadow: "0 3px 12px rgba(0,0,0,0.1)"
+      }}>
 
-      <p>Employee ID: {id}</p>
+        <h2 style={{ textAlign: "center", marginBottom: 10 }}>
+          Identity Verification
+        </h2>
 
-      {/* Camera Feed */}
-      {!photo && (
-        <div>
+        <p style={{
+          textAlign: "center",
+          color: "#666",
+          marginBottom: 30
+        }}>
+          Employee ID: {id}
+        </p>
 
-          <video
-            ref={videoRef}
-            autoPlay
-            style={{ width: 400, border: "1px solid gray" }}
-          />
+        {/* Camera */}
 
-          <br /><br />
+        {!photo && (
 
-          <button onClick={capturePhoto}>
-            Capture Photo
-          </button>
+          <div style={{ textAlign: "center" }}>
 
-        </div>
-      )}
-
-      {/* Photo + Signature */}
-      {photo && !finalImage && (
-
-        <div>
-
-          <h3>Sign Below</h3>
-
-          <div
-            style={{
-              position: "relative",
-              width: 400
-            }}
-          >
-
-            <img
-              src={photo}
-              width="400"
-              alt="captured"
+            <video
+              ref={videoRef}
+              autoPlay
+              style={{
+                width: "100%",
+                borderRadius: 8,
+                border: "1px solid #ddd"
+              }}
             />
 
-            <canvas
-              ref={canvasRef}
-              width={400}
-              height={300}
+            <button
+              onClick={capturePhoto}
               style={{
-                position: "absolute",
-                left: 0,
-                top: 0
+                marginTop: 20,
+                padding: "10px 20px",
+                background: "#4f46e5",
+                color: "white",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontWeight: "bold"
               }}
-              onMouseDown={startDraw}
-              onMouseMove={draw}
-              onMouseUp={stopDraw}
-              onMouseLeave={stopDraw}
+            >
+              Capture Photo
+            </button>
+
+          </div>
+
+        )}
+
+        {/* Signature */}
+
+        {photo && !finalImage && (
+
+          <div>
+
+            <h3 style={{ marginBottom: 10 }}>Draw Signature</h3>
+
+            <p style={{ color: "#777", fontSize: 14 }}>
+              Sign inside the box to verify identity
+            </p>
+
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                marginTop: 10
+              }}
+            >
+
+              <img
+                src={photo}
+                alt="captured"
+                style={{
+                  width: "100%",
+                  borderRadius: 8
+                }}
+              />
+
+              <canvas
+                ref={canvasRef}
+                width={400}
+                height={300}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0
+                }}
+                onMouseDown={startDraw}
+                onMouseMove={draw}
+                onMouseUp={stopDraw}
+                onMouseLeave={stopDraw}
+              />
+
+            </div>
+
+            <button
+              onClick={mergeImages}
+              style={{
+                marginTop: 20,
+                width: "100%",
+                padding: "10px",
+                background: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontWeight: "bold"
+              }}
+            >
+              Generate Audit Image
+            </button>
+
+          </div>
+
+        )}
+
+        {/* Final Image */}
+
+        {finalImage && (
+
+          <div style={{ textAlign: "center" }}>
+
+            <h3 style={{ marginBottom: 15 }}>Verification Complete</h3>
+
+            <img
+              src={finalImage}
+              alt="final"
+              style={{
+                width: "100%",
+                borderRadius: 8,
+                border: "1px solid #ddd"
+              }}
             />
 
           </div>
 
-          <br />
+        )}
 
-          <button onClick={mergeImages}>
-            Merge Photo + Signature
-          </button>
-
-        </div>
-
-      )}
-
-      {/* Final Image */}
-      {finalImage && (
-
-        <div>
-
-          <h3>Final Audit Image</h3>
-
-          <img
-            src={finalImage}
-            width="400"
-            alt="final"
-          />
-
-        </div>
-
-      )}
+      </div>
 
     </div>
   );
