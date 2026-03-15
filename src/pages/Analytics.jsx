@@ -3,50 +3,69 @@ import { fetchEmployees } from "../services/api";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 export default function Analytics() {
-
   const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     async function loadData() {
+      try {
+        const res = await fetchEmployees();
 
-      const data = await fetchEmployees();
+        console.log("RAW API:", res);
 
-      const citySalary = {};
+        // Safely extract employees array
+        let employees = [];
 
-      data.forEach(emp => {
-
-        const city = emp.city || emp.CITY;
-        const salary = emp.salary || emp.SALARY;
-
-        if (!citySalary[city]) {
-          citySalary[city] = 0;
+        if (Array.isArray(res)) {
+          employees = res;
+        } else if (Array.isArray(res?.data)) {
+          employees = res.data;
+        } else if (Array.isArray(res?.TABLE_DATA)) {
+          employees = res.TABLE_DATA;
+        } else if (Array.isArray(res?.TABLE_DATA?.data)) {
+          employees = res.TABLE_DATA.data;
         }
 
-        citySalary[city] += Number(salary);
+        console.log("EMPLOYEES:", employees);
 
-      });
+        const citySalary = {};
 
-      const formatted = Object.entries(citySalary).map(
-        ([city, salary]) => ({
-          city,
-          salary
-        })
-      );
+        employees.forEach((emp) => {
+          const city = emp.city || emp.CITY;
+          const salary = emp.salary || emp.SALARY;
 
-      setChartData(formatted);
+          if (!city) return;
 
+          if (!citySalary[city]) {
+            citySalary[city] = 0;
+          }
+
+          citySalary[city] += Number(salary || 0);
+        });
+
+        const formatted = Object.entries(citySalary).map(
+          ([city, salary]) => ({
+            city,
+            salary,
+          })
+        );
+
+        setChartData(formatted);
+        setLoading(false);
+      } catch (err) {
+        console.error("Analytics error:", err);
+        setLoading(false);
+      }
     }
 
     loadData();
-
   }, []);
 
   const cityCoordinates = {
     Delhi: [28.7041, 77.1025],
     Mumbai: [19.0760, 72.8777],
     Bangalore: [12.9716, 77.5946],
-    Chennai: [13.0827, 80.2707]
+    Chennai: [13.0827, 80.2707],
   };
 
   return (
@@ -55,19 +74,11 @@ export default function Analytics() {
         background: "#f4f6f9",
         minHeight: "100vh",
         padding: 40,
-        fontFamily: "Arial"
+        fontFamily: "Arial",
       }}
     >
-      <div
-        style={{
-          maxWidth: 1000,
-          margin: "auto"
-        }}
-      >
-
-        <h2 style={{ marginBottom: 30 }}>
-          Employee Analytics Dashboard
-        </h2>
+      <div style={{ maxWidth: 1000, margin: "auto" }}>
+        <h2 style={{ marginBottom: 30 }}>Employee Analytics Dashboard</h2>
 
         {/* Chart Card */}
 
@@ -77,66 +88,64 @@ export default function Analytics() {
             padding: 25,
             borderRadius: 10,
             boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-            marginBottom: 40
+            marginBottom: 40,
           }}
         >
+          <h3 style={{ marginBottom: 20 }}>Salary Distribution by City</h3>
 
-          <h3 style={{ marginBottom: 20 }}>
-            Salary Distribution by City
-          </h3>
+          {loading && <p>Loading analytics...</p>}
 
-          <svg
-            width="100%"
-            height="300"
-            viewBox="0 0 800 300"
-            style={{
-              border: "1px solid #eee",
-              background: "#fafafa",
-              borderRadius: 6
-            }}
-          >
+          {!loading && chartData.length === 0 && (
+            <p>No analytics data available</p>
+          )}
 
-            {chartData.map((item, index) => {
+          {!loading && chartData.length > 0 && (
+            <svg
+              width="100%"
+              height="300"
+              viewBox="0 0 800 300"
+              style={{
+                border: "1px solid #eee",
+                background: "#fafafa",
+                borderRadius: 6,
+              }}
+            >
+              {chartData.map((item, index) => {
+                const chartWidth = 800;
+                const barWidth = 60;
 
-              const chartWidth = 800;
-              const barWidth = 60;
+                const gap = chartWidth / chartData.length;
 
-              const gap = chartWidth / chartData.length;
+                const x = index * gap + gap / 2 - barWidth / 2;
 
-              const x = index * gap + gap / 2 - barWidth / 2;
+                const barHeight = item.salary / 1000;
 
-              const barHeight = item.salary / 1000;
+                const y = 250 - barHeight;
 
-              const y = 250 - barHeight;
+                return (
+                  <g key={index}>
+                    <rect
+                      x={x}
+                      y={y}
+                      width={barWidth}
+                      height={barHeight}
+                      fill="#4f46e5"
+                      rx="6"
+                    />
 
-              return (
-                <g key={index}>
-
-                  <rect
-                    x={x}
-                    y={y}
-                    width={barWidth}
-                    height={barHeight}
-                    fill="#4f46e5"
-                    rx="6"
-                  />
-
-                  <text
-                    x={x + barWidth / 2}
-                    y={270}
-                    textAnchor="middle"
-                    fontSize="13"
-                  >
-                    {item.city}
-                  </text>
-
-                </g>
-              );
-
-            })}
-
-          </svg>
-
+                    <text
+                      x={x + barWidth / 2}
+                      y={270}
+                      textAnchor="middle"
+                      fontSize="13"
+                    >
+                      {item.city}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          )}
         </div>
 
         {/* Map Card */}
@@ -146,13 +155,10 @@ export default function Analytics() {
             background: "white",
             padding: 25,
             borderRadius: 10,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.08)"
+            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
           }}
         >
-
-          <h3 style={{ marginBottom: 20 }}>
-            Employee Cities Map
-          </h3>
+          <h3 style={{ marginBottom: 20 }}>Employee Cities Map</h3>
 
           <MapContainer
             center={[20.5937, 78.9629]}
@@ -160,16 +166,12 @@ export default function Analytics() {
             style={{
               height: "450px",
               width: "100%",
-              borderRadius: 8
+              borderRadius: 8,
             }}
           >
-
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
             {chartData.map((item, index) => {
-
               const coords = cityCoordinates[item.city];
 
               if (!coords) return null;
@@ -183,13 +185,9 @@ export default function Analytics() {
                   </Popup>
                 </Marker>
               );
-
             })}
-
           </MapContainer>
-
         </div>
-
       </div>
     </div>
   );
